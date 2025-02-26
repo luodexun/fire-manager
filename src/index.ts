@@ -6,8 +6,7 @@ interface MyEnv {
 const router = new Router<MyEnv>();
 
 router.get('/', async (ctx: { env: MyEnv }) => {
-	console.log(await ctx.env.model.get('age'));
-	return new Response("321");
+	return new Response(await ctx.env.model.get('age'));
 });
 
 export default {
