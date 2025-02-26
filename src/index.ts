@@ -1,13 +1,15 @@
-import {Router} from "cloudworker-router"
+import { Router } from "cloudworker-router";
 
 interface MyEnv {
 	model: KVNamespace;
 	DB: D1Database;
 }
+
 interface Context {
 	env: Env;
 	waitUntil(promise: Promise<any>): void;
 }
+
 const router = new Router<MyEnv>();
 
 router.get('/', async (ctx: { env: MyEnv }) => {
@@ -23,8 +25,7 @@ router.get('/list', async (ctx: { env: MyEnv }) => {
 	return Response.json(results);
 });
 
-router.post("/insert", async (ctx: { env: MyEnv })=>{
-
+router.put("/insert", async (ctx: { env: MyEnv }) => {
 	try {
 		// 解析请求体中的 JSON 数据
 		// @ts-ignore
@@ -32,9 +33,9 @@ router.post("/insert", async (ctx: { env: MyEnv })=>{
 
 		// 插入数据
 		await ctx.env.DB.prepare(
-			'INSERT INTO Customers (CustomerId, CompanyName, ContactName) VALUES (?, ?, ?)'
+			'INSERT INTO Customers (CompanyName, ContactName) VALUES (?, ?)'
 		)
-			.bind(data.CustomerId, data.CompanyName, data.ContactName)
+			.bind(data.CompanyName, data.ContactName)
 			.run();
 
 		// 查询最新的客户列表
@@ -52,7 +53,41 @@ router.post("/insert", async (ctx: { env: MyEnv })=>{
 			headers: { 'Content-Type': 'application/json' },
 		});
 	}
-})
+});
+
+router.post("/search", async (ctx: { env: MyEnv, request: Request }) => {
+	try {
+		// 解析请求体中的 JSON 数据
+		const data = await ctx.request.json();
+
+		// 获取查询参数
+		// @ts-ignore
+		const name = data.name;
+
+		if (!name) {
+			return new Response(JSON.stringify({ error: 'Name parameter is required' }), {
+				status: 400,
+				headers: { 'Content-Type': 'application/json' },
+			});
+		}
+
+		// 执行模糊查询，同时查询 CompanyName 和 ContactName
+		const { results } = await ctx.env.DB.prepare(
+			"SELECT * FROM Customers WHERE CompanyName LIKE ? OR ContactName LIKE ?"
+		)
+			.bind(`%${name}%`, `%${name}%`)
+			.all();
+
+		// 返回查询结果
+		return Response.json(results);
+	} catch (error) {
+		// 处理错误
+		return new Response(JSON.stringify({ error: 'Failed to perform search' }), {
+			status: 400,
+			headers: { 'Content-Type': 'application/json' },
+		});
+	}
+});
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
