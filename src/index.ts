@@ -18,7 +18,7 @@ const API = new Router();
 
 API.add('GET', '/messages/:id', async (req: { params: { id: any; }; }, res: { setHeader: (arg0: string, arg1: string) => void; send: (arg0: number, arg1: any) => void; }) => {
 	// Pre-parsed `req.params` object
-	const key = `messages::${req.params.id}`;
+	const key = `model::${req.params.id}`;
 
 	// Assumes JSON (can override)
 	const message = await read<Message>(DATA, key);
@@ -55,7 +55,7 @@ API.add('POST', '/messages', async (req: { body: () => any; extend: (arg0: Promi
 	};
 
 	// Assumes JSON (can override)
-	const key = `messages::${value.id}`;
+	const key = `model::${value.id}`;
 	const success = await write<Message>(DATA, key, value);
 	//    ^ boolean
 
