@@ -17,6 +17,6 @@
 		"wrangler": "^3.110.0"
 	},
 	"dependencies": {
-		"worktop": "^0.7.3"
+		"cloudworker-router": "^4.1.5"
 	}
 }
