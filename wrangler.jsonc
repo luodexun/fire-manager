@@ -26,7 +26,16 @@
 	"kv_namespaces": [
 		{
 			"binding": "model",
-			"id": "3e4275cde7014158885eb485e15e7c91"
+			"id": "3e4275cde7014158885eb485e15e7c91",
+			"preview_id": "926f3ba63ec24e9ba68e3b14867fbbd4"
+		}
+	],
+
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "ksa",
+			"database_id": "51956c46-5c9e-4c37-b1d3-7bc90d47f6b7"
 		}
 	]
 
