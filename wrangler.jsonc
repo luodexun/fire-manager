@@ -37,6 +37,12 @@
 			"database_name": "ksa",
 			"database_id": "51956c46-5c9e-4c37-b1d3-7bc90d47f6b7"
 		}
+	],
+	"r2_buckets": [
+		{
+			"bucket_name": "fire",
+			"binding": "fire"
+		}
 	]
 
 	/**
