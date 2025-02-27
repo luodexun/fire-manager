@@ -1,4 +1,4 @@
-import { Router,bodyparser } from "cloudworker-router";
+import { Router } from "cloudworker-router";
 
 interface MyEnv {
 	model: KVNamespace;
@@ -13,7 +13,6 @@ interface Context {
 const router = new Router<MyEnv>();
 
 
-router.use(bodyparser);
 router.get('/', async (ctx: { env: MyEnv }) => {
 	return new Response(await ctx.env.model.get('age'));
 });
