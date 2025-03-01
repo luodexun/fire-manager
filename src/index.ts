@@ -1,4 +1,5 @@
 import { Router } from "cloudworker-router";
+import template from './template';
 
 interface MyEnv {
 	model: KVNamespace;
@@ -14,7 +15,7 @@ const router = new Router<MyEnv>();
 
 
 router.get('/', async (ctx: { env: MyEnv }) => {
-	return new Response(await ctx.env.model.get('age'));
+	return template()
 });
 
 router.get('/list', async (ctx: { env: MyEnv }) => {
@@ -56,6 +57,9 @@ router.put("/insert", async (ctx: { env: MyEnv }) => {
 	}
 });
 
+
+
+
 router.post("/search", async (ctx: { env: MyEnv, request: Request }) => {
 	try {
 		// 解析请求体中的 JSON 数据
@@ -90,8 +94,51 @@ router.post("/search", async (ctx: { env: MyEnv, request: Request }) => {
 	}
 });
 
+let count = 0
+async function handleRequest(request:Request) {
+	const upgradeHeader = request.headers.get('Upgrade');
+	if (!upgradeHeader || upgradeHeader !== 'websocket') {
+		return new Response('Expected Upgrade: websocket', { status: 426 });
+	}
+
+	const webSocketPair = new WebSocketPair();
+	const [client, server] = Object.values(webSocketPair);
+
+	server.accept();
+	server.addEventListener("message", async ({ data }) => {
+		if (data === "CLICK") {
+			count += 1
+			server.send(JSON.stringify({ count, tz: new Date() }))
+		} else {
+			// An unknown message came into the server. Send back an error message
+			server.send(JSON.stringify({ error: "Unknown message received", tz: new Date() }))
+		}
+	})
+
+	server.addEventListener("close", async evt => {
+		// Handle when a client closes the WebSocket connection
+		console.log(evt)
+	})
+
+	return new Response(null, {
+		status: 101,
+		webSocket: client,
+	});
+}
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return router.handle(request, <MyEnv>env, ctx);
+		try {
+			const url = new URL(request.url)
+			switch (url.pathname) {
+				case '/ws':
+					return handleRequest(request)
+				default:
+					return router.handle(request, <MyEnv>env, ctx);
+			}
+		} catch (err) {
+			// @ts-ignore
+			return new Response(err.toString())
+		}
 	},
 };
