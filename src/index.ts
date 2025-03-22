@@ -4,6 +4,7 @@ import template from './template';
 interface MyEnv {
 	model: KVNamespace;
 	DB: D1Database;
+	MY_BUCKET: R2Bucket;
 }
 
 interface Context {
@@ -93,6 +94,45 @@ router.post("/search", async (ctx: { env: MyEnv, request: Request }) => {
 		});
 	}
 });
+
+
+router.put("/upload", async (ctx: { env: MyEnv, request: Request }) => {
+	try {
+		const contentType = ctx.request.headers.get("content-type") || "";
+		console.log(contentType.includes("multipart/form-data"));
+		if (!contentType.includes("multipart/form-data")) {
+			return new Response("Invalid Content-Type", { status: 400 });
+		}
+
+		// 解析 FormData
+		const formData = await ctx.request.formData();
+		const file = formData.get("file");
+		if (!file || typeof file !== "object") {
+			return new Response("No file uploaded", { status: 400 });
+		}
+
+		// 读取文件数据
+		// @ts-ignore
+		const arrayBuffer = await file.arrayBuffer();
+		// @ts-ignore
+		const fileType = file.type || "application/octet-stream";
+		// @ts-ignore
+		const fileName = `${Date.now()}-${file.name}`;
+
+		// 存入 R2
+		await ctx.env.MY_BUCKET.put(fileName, arrayBuffer, {
+			httpMetadata: { contentType: fileType },
+		});
+
+		return new Response(JSON.stringify({ message: "File uploaded", fileName }), {
+			headers: { "Content-Type": "application/json" },
+		});
+
+	} catch (error) {
+		// @ts-ignore
+		return new Response(`Error: ${error.message}`, { status: 500 });
+	}
+})
 
 let count = 0
 async function handleRequest(request:Request) {
